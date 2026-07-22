@@ -1,7 +1,37 @@
 import { supabase } from './supabaseClient'
 
+// Definere typer
+export interface Ingrediens {
+  id: string
+  oppskrift_id: string
+  navn: string
+  mengde: string
+  rekkefolge: number
+}
+
+export interface Steg {
+  id: string
+  oppskrift_id: string
+  beskrivelse: string
+  bilde_url: string | null
+  rekkefolge: number
+}
+
+export interface Oppskrift {
+  id: string
+  tittel: string
+  kategori: string
+  beskrivelse: string | null
+  bilde_url: string | null
+  prep_time: number | null
+  porsjoner: number | null
+  created_at: string
+  ingredienser: Ingrediens[]
+  steg: Steg[]
+}
+
 // Hent alle oppskrifter
-export async function getOppskrifter() {
+export async function getOppskrifter(): Promise<Oppskrift[]> {
   const { data, error } = await supabase
     .from('oppskrifter')
     .select('*')
@@ -16,7 +46,7 @@ export async function getOppskrifter() {
 }
 
 // Hent oppskrifter etter kategori
-export async function getOppskrifterByKategori(kategori: string) {
+export async function getOppskrifterByKategori(kategori: string): Promise<Oppskrift[]> {
   const { data, error } = await supabase
     .from('oppskrifter')
     .select('*')
@@ -32,7 +62,7 @@ export async function getOppskrifterByKategori(kategori: string) {
 }
 
 // Hent én oppskrift med ingredienser og steg
-export async function getOppskrift(id: string) {
+export async function getOppskrift(id: string): Promise<Oppskrift | null> {
   // Hent oppskriften
   const { data: oppskrift, error: oppskriftError } = await supabase
     .from('oppskrifter')
@@ -75,7 +105,7 @@ export async function getOppskrift(id: string) {
 }
 
 // Hent alle kategorier (unike)
-export async function getKategorier() {
+export async function getKategorier(): Promise<string[]> {
   const { data, error } = await supabase
     .from('oppskrifter')
     .select('kategori')
