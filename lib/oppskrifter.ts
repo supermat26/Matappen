@@ -104,7 +104,7 @@ export async function getOppskrift(id: string): Promise<Oppskrift | null> {
   }
 }
 
-// Hent alle kategorier (unike)
+// Hent alle kategorier (unike) - FIXET VERSJON
 export async function getKategorier(): Promise<string[]> {
   const { data, error } = await supabase
     .from('oppskrifter')
@@ -115,7 +115,13 @@ export async function getKategorier(): Promise<string[]> {
     return []
   }
 
-  // Fjern duplikater
-  const kategorier = [...new Set(data.map(item => item.kategori))]
+  // Fjern duplikater - bruker reduce i stedet for Set
+  const kategorier: string[] = []
+  data.forEach((item) => {
+    if (!kategorier.includes(item.kategori)) {
+      kategorier.push(item.kategori)
+    }
+  })
+  
   return kategorier
 }
