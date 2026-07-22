@@ -1,4 +1,5 @@
 import { getOppskrifterByKategori } from '@/lib/oppskrifter'
+import type { Oppskrift } from '@/lib/oppskrifter'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -37,7 +38,7 @@ export default async function KategoriPage({ params }: Props) {
 
       {/* Oppskrifter */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {oppskrifter.map((oppskrift) => (
+        {oppskrifter.map((oppskrift: Oppskrift) => (
           <Link
             key={oppskrift.id}
             href={`/oppskrifter/${oppskrift.id}`}
