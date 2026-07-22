@@ -9,21 +9,15 @@ interface Props {
 
 export default function Opplesningsknapp({ steg }: Props) {
   const [leser, setLeser] = useState(false)
-  const [speechSynth] = useState(() => {
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      return window.speechSynthesis
-    }
-    return null
-  })
 
   const lesOpp = () => {
-    if (!speechSynth) {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
       alert('Din nettleser støtter ikke opplesning. Prøv Chrome, Edge eller Safari.')
       return
     }
 
     if (leser) {
-      speechSynth.cancel()
+      window.speechSynthesis.cancel()
       setLeser(false)
       return
     }
@@ -47,7 +41,7 @@ export default function Opplesningsknapp({ steg }: Props) {
       alert('Det oppstod en feil under opplesning.')
     }
 
-    speechSynth.speak(utterance)
+    window.speechSynthesis.speak(utterance)
   }
 
   return (
