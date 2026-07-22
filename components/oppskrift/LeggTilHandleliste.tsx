@@ -1,10 +1,6 @@
 'use client'
 
-interface Ingrediens {
-  id: string
-  navn: string
-  mengde: string
-}
+import type { Ingrediens } from '@/lib/oppskrifter'
 
 interface Props {
   ingredienser: Ingrediens[]
