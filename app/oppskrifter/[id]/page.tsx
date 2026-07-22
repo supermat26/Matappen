@@ -2,6 +2,8 @@ import { getOppskrift } from '@/lib/oppskrifter'
 import type { Ingrediens, Steg } from '@/lib/oppskrifter'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import LeggTilHandleliste from '@/components/oppskrift/LeggTilHandleliste'
+import Opplesningsknapp from '@/components/oppskrift/Opplesningsknapp'
 
 interface Props {
   params: {
@@ -39,9 +41,14 @@ export default async function OppskriftPage({ params }: Props) {
       )}
 
       {/* Tittel og info */}
-      <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
-        {oppskrift.tittel}
-      </h1>
+      <div className="flex justify-between items-start mb-2">
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
+          {oppskrift.tittel}
+        </h1>
+        <button className="text-3xl hover:scale-110 transition-transform">
+          ♥
+        </button>
+      </div>
       <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-6">
         <span>⏱ {oppskrift.prep_time || 30} min</span>
         <span>👥 {oppskrift.porsjoner || 4} porsjoner</span>
@@ -71,14 +78,15 @@ export default async function OppskriftPage({ params }: Props) {
             </li>
           ))}
         </ul>
-        <button className="mt-4 w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors">
-          🛒 Legg alle i handlelisten
-        </button>
+        <LeggTilHandleliste ingredienser={oppskrift.ingredienser} />
       </div>
 
-      {/* Steg */}
+      {/* Steg med opplesning */}
       <div>
-        <h2 className="text-2xl font-bold mb-4">📝 Fremgangsmåte</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">📝 Fremgangsmåte</h2>
+          <Opplesningsknapp steg={oppskrift.steg} />
+        </div>
         <div className="space-y-6">
           {oppskrift.steg.map((steg: Steg, index: number) => (
             <div
