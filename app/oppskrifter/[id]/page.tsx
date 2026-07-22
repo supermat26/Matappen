@@ -1,4 +1,5 @@
 import { getOppskrift } from '@/lib/oppskrifter'
+import type { Ingrediens, Steg } from '@/lib/oppskrifter'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 
@@ -60,7 +61,7 @@ export default async function OppskriftPage({ params }: Props) {
       <div className="bg-gray-50 rounded-xl p-6 mb-8">
         <h2 className="text-2xl font-bold mb-4">🛒 Ingredienser</h2>
         <ul className="space-y-2">
-          {oppskrift.ingredienser.map((ingrediens) => (
+          {oppskrift.ingredienser.map((ingrediens: Ingrediens) => (
             <li
               key={ingrediens.id}
               className="flex justify-between items-center border-b border-gray-200 pb-2"
@@ -79,7 +80,7 @@ export default async function OppskriftPage({ params }: Props) {
       <div>
         <h2 className="text-2xl font-bold mb-4">📝 Fremgangsmåte</h2>
         <div className="space-y-6">
-          {oppskrift.steg.map((steg, index) => (
+          {oppskrift.steg.map((steg: Steg, index: number) => (
             <div
               key={steg.id}
               className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm"
