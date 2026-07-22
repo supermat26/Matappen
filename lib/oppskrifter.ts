@@ -38,10 +38,11 @@ export async function getOppskrifter(): Promise<Oppskrift[]> {
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Feil ved henting av oppskrifter:', error)
+    console.error('❌ Feil ved henting av oppskrifter:', error)
     return []
   }
 
+  console.log('✅ Hentet oppskrifter:', data?.length || 0)
   return data || []
 }
 
@@ -54,7 +55,7 @@ export async function getOppskrifterByKategori(kategori: string): Promise<Oppskr
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Feil ved henting av oppskrifter for kategori:', error)
+    console.error('❌ Feil ved henting av oppskrifter for kategori:', error)
     return []
   }
 
@@ -71,7 +72,7 @@ export async function getOppskrift(id: string): Promise<Oppskrift | null> {
     .single()
 
   if (oppskriftError || !oppskrift) {
-    console.error('Feil ved henting av oppskrift:', oppskriftError)
+    console.error('❌ Feil ved henting av oppskrift:', oppskriftError)
     return null
   }
 
@@ -83,7 +84,7 @@ export async function getOppskrift(id: string): Promise<Oppskrift | null> {
     .order('rekkefolge', { ascending: true })
 
   if (ingrediensError) {
-    console.error('Feil ved henting av ingredienser:', ingrediensError)
+    console.error('❌ Feil ved henting av ingredienser:', ingrediensError)
   }
 
   // Hent steg
@@ -94,7 +95,7 @@ export async function getOppskrift(id: string): Promise<Oppskrift | null> {
     .order('rekkefolge', { ascending: true })
 
   if (stegError) {
-    console.error('Feil ved henting av steg:', stegError)
+    console.error('❌ Feil ved henting av steg:', stegError)
   }
 
   return {
@@ -104,18 +105,18 @@ export async function getOppskrift(id: string): Promise<Oppskrift | null> {
   }
 }
 
-// Hent alle kategorier (unike) - FIXET VERSJON
+// Hent alle kategorier (unike)
 export async function getKategorier(): Promise<string[]> {
   const { data, error } = await supabase
     .from('oppskrifter')
     .select('kategori')
 
   if (error) {
-    console.error('Feil ved henting av kategorier:', error)
+    console.error('❌ Feil ved henting av kategorier:', error)
     return []
   }
 
-  // Fjern duplikater - bruker reduce i stedet for Set
+  // Fjern duplikater
   const kategorier: string[] = []
   data.forEach((item) => {
     if (!kategorier.includes(item.kategori)) {
@@ -123,5 +124,6 @@ export async function getKategorier(): Promise<string[]> {
     }
   })
   
+  console.log('✅ Kategorier:', kategorier)
   return kategorier
 }
