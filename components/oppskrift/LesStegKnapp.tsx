@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 
 interface Props {
   tekst: string
@@ -12,14 +12,14 @@ export default function LesStegKnapp({ tekst, stegNummer }: Props) {
 
   const lesOpp = () => {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      alert('Din nettleser støtter ikke opplesning.')
+      alert('Nettleseren støtter ikke opplesning')
       return
     }
 
-    const speechSynth = window.speechSynthesis
+    const synth = window.speechSynthesis
 
     if (leser) {
-      speechSynth.cancel()
+      synth.cancel()
       setLeser(false)
       return
     }
@@ -31,6 +31,13 @@ export default function LesStegKnapp({ tekst, stegNummer }: Props) {
     utterance.rate = 0.85
     utterance.pitch = 1
 
+    // Prøv å finne norsk stemme
+    const voices = synth.getVoices()
+    const norskStemme = voices.find(v => v.lang.startsWith('nb') || v.lang.startsWith('no'))
+    if (norskStemme) {
+      utterance.voice = norskStemme
+    }
+
     utterance.onend = () => {
       setLeser(false)
     }
@@ -39,19 +46,21 @@ export default function LesStegKnapp({ tekst, stegNummer }: Props) {
       setLeser(false)
     }
 
-    speechSynth.speak(utterance)
+    synth.speak(utterance)
   }
 
   return (
     <button
       onClick={lesOpp}
-      className={`text-sm px-3 py-1 rounded transition-colors ${
+      className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm transition-colors touch-manipulation ${
         leser
           ? 'bg-red-100 text-red-700'
-          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          : 'bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300'
       }`}
+      style={{ minHeight: '44px' }}  // God touch target
     >
-      {leser ? '⏹️ Stopp' : '🔊 Lytt'}
+      {leser ? '⏹️' : '🔊'} 
+      <span>{leser ? 'Stopp' : 'Lytt'}</span>
     </button>
   )
 }
