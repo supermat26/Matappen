@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useEffect } from 'react'
 
 interface Props {
   tekst: string
@@ -9,9 +9,16 @@ interface Props {
 
 export default function LesStegKnapp({ tekst, stegNummer }: Props) {
   const [leser, setLeser] = useState(false)
+  const [stotte, setStotte] = useState(true)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !('speechSynthesis' in window)) {
+      setStotte(false)
+    }
+  }, [])
 
   const lesOpp = () => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    if (!stotte) {
       alert('Nettleseren støtter ikke opplesning')
       return
     }
@@ -57,7 +64,7 @@ export default function LesStegKnapp({ tekst, stegNummer }: Props) {
           ? 'bg-red-100 text-red-700'
           : 'bg-gray-100 text-gray-700 hover:bg-gray-200 active:bg-gray-300'
       }`}
-      style={{ minHeight: '44px' }}  // God touch target
+      style={{ minHeight: '44px' }}
     >
       {leser ? '⏹️' : '🔊'} 
       <span>{leser ? 'Stopp' : 'Lytt'}</span>
