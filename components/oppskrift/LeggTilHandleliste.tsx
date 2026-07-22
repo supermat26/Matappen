@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import type { Ingrediens } from '@/lib/oppskrifter'
 
 interface Props {
@@ -7,6 +8,8 @@ interface Props {
 }
 
 export default function LeggTilHandleliste({ ingredienser }: Props) {
+  const [lagtTil, setLagtTil] = useState(false)
+
   const leggTilAlle = () => {
     // Hent eksisterende handleliste
     const eksisterende = JSON.parse(localStorage.getItem('handleliste') || '[]')
@@ -19,15 +22,20 @@ export default function LeggTilHandleliste({ ingredienser }: Props) {
     const oppdatert = [...eksisterende, ...nye]
     localStorage.setItem('handleliste', JSON.stringify(oppdatert))
     
-    alert(`✅ ${nye.length} ingredienser lagt til i handlelisten!`)
+    setLagtTil(true)
+    setTimeout(() => setLagtTil(false), 3000)
   }
 
   return (
     <button
       onClick={leggTilAlle}
-      className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors"
+      className={`mt-4 w-full py-3 rounded-lg font-semibold transition-colors ${
+        lagtTil
+          ? 'bg-green-600 text-white'
+          : 'bg-red-600 text-white hover:bg-red-700'
+      }`}
     >
-      🛒 Legg alle i handlelisten
+      {lagtTil ? '✅ Lagt til i handlelisten!' : '🛒 Legg alle i handlelisten'}
     </button>
   )
 }
