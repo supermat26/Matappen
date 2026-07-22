@@ -1,4 +1,5 @@
 import { getKategorier, getOppskrifter } from '@/lib/oppskrifter'
+import type { Oppskrift } from '@/lib/oppskrifter'
 import Link from 'next/link'
 
 // Ikoner for kategorier
@@ -55,7 +56,7 @@ export default async function Home() {
       <section>
         <h2 className="text-2xl font-bold mb-4">🔥 Siste oppskrifter</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {oppskrifter.slice(0, 6).map((oppskrift) => (
+          {oppskrifter.slice(0, 6).map((oppskrift: Oppskrift) => (
             <Link
               key={oppskrift.id}
               href={`/oppskrifter/${oppskrift.id}`}
