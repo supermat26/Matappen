@@ -44,21 +44,6 @@ export default function HandlelistePage() {
     alert('✅ Handlelisten er kopiert!')
   }
 
-  // Send til REMA 1000 (åpner REMA-appen hvis installert)
-  const openREMA = () => {
-    const tekst = items.map(item => `${item.navn} ${item.mengde}`).join(',')
-    // REMA 1000 app deep link (hvis de har en)
-    const remaUrl = `rema1000://handleliste?items=${encodeURIComponent(tekst)}`
-    
-    // Prøv å åpne appen
-    window.location.href = remaUrl
-    
-    // Fallback: hvis appen ikke er installert, kopier listen
-    setTimeout(() => {
-      copyList()
-    }, 2000)
-  }
-
   return (
     <div className="max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">
@@ -87,12 +72,6 @@ export default function HandlelistePage() {
                 {items.length} varer i handlelisten
               </span>
               <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={openREMA}
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm"
-                >
-                  🏪 REMA 1000
-                </button>
                 <button
                   onClick={copyList}
                   className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm"
@@ -136,9 +115,8 @@ export default function HandlelistePage() {
               💡 Handle tips:
             </h3>
             <ul className="text-blue-700 text-sm space-y-1">
-              <li>1. Klikk &quot;REMA 1000&quot; for å åpne appen (hvis installert)</li>
-              <li>2. Klikk &quot;Kopier&quot; for å lime inn i hvilken som helst handleliste-app</li>
-              <li>3. Bruk listen som sjekkliste i butikken</li>
+              <li>1. Klikk &quot;Kopier&quot; for å lime inn i handleliste-appen din</li>
+              <li>2. Bruk listen som sjekkliste i butikken</li>
             </ul>
           </div>
         </>
