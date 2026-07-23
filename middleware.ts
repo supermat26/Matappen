@@ -1,33 +1,40 @@
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { createServerClient } from '@/lib/supabaseClient'
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req, res })
+  // Opprett en server-side Supabase-klient
+  const supabase = createServerClient(req.cookies)
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  // Sjekk om brukeren er logget inn
+  const { data: { session } } = await supabase.auth.getSession()
+
+  const path = req.nextUrl.pathname
 
   // Sider som krever innlogging
   const protectedPaths = ['/matplanlegger', '/favoritter']
-  const path = req.nextUrl.pathname
 
+  // Hvis brukeren prøver å gå til en beskyttet side uten å være logget inn
   if (protectedPaths.some(p => path.startsWith(p)) && !session) {
     const redirectUrl = new URL('/auth', req.url)
     redirectUrl.searchParams.set('redirect', path)
     return NextResponse.redirect(redirectUrl)
   }
 
-  // Hvis allerede logget inn og går til /auth, send til forsiden
+  // Hvis brukeren er logget inn og prøver å gå til /auth, send til forsiden
   if (path === '/auth' && session) {
     return NextResponse.redirect(new URL('/', req.url))
   }
 
-  return res
+  return NextResponse.next()
 }
 
+// Konfigurer hvilke stier middleware skal kjøres på
 export const config = {
-  matcher: ['/matplanlegger/:path*', '/favoritter/:path*', '/auth'],
+  matcher: [
+    '/matplanlegger/:path*',
+    '/favoritter/:path*',
+    '/auth',
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 }
