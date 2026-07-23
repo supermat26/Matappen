@@ -119,10 +119,53 @@ function VelgOppskriftModal({
 }
 
 // ============================================
+// MODAL: Bekreft fjerning
+// ============================================
+function FjernBekreftModal({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  oppskriftTittel 
+}: { 
+  isOpen: boolean
+  onClose: () => void
+  onConfirm: () => void
+  oppskriftTittel: string
+}) {
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl max-w-md w-full p-6">
+        <h2 className="text-xl font-bold mb-4">🗑️ Fjern måltid</h2>
+        <p className="text-gray-600 mb-6">
+          Er du sikker på at du vil fjerne <strong>{oppskriftTittel}</strong> fra planen?
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg hover:bg-gray-300"
+          >
+            Avbryt
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+          >
+            Ja, fjern
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
 // HOVEDKOMPONENT
 // ============================================
 export default function MatplanleggerPage() {
   const [selectedDay, setSelectedDay] = useState<{ index: number; type: string } | null>(null)
+  const [showRemoveModal, setShowRemoveModal] = useState<{ index: number; tittel: string } | null>(null)
   const [plan, setPlan] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
@@ -208,9 +251,25 @@ export default function MatplanleggerPage() {
   const handleDayClick = (dayIndex: number) => {
     const day = getDayOppskrift(dayIndex)
     
-    // Hvis dagen har en oppskrift → gå til oppskriften
-    if (day?.oppskrift_id) {
-      router.push(`/oppskrifter/${day.oppskrift_id}`)
+    // Hvis dagen har en oppskrift → åpne modal med valg
+    if (day?.oppskrift_id && day?.oppskrift) {
+      // Vis en liten meny: gå til oppskrift eller fjern
+      const valg = confirm(
+        `"${day.oppskrift.tittel}" er lagt til denne dagen.\n\n` +
+        `Trykk "OK" for å gå til oppskriften\n` +
+        `Trykk "Avbryt" for å fjerne den fra planen`
+      )
+      
+      if (valg) {
+        // OK → gå til oppskriften
+        router.push(`/oppskrifter/${day.oppskrift_id}`)
+      } else {
+        // Avbryt → åpne bekreftelsesmodal for fjerning
+        setShowRemoveModal({
+          index: dayIndex,
+          tittel: day.oppskrift.tittel
+        })
+      }
     } else {
       // Hvis ingen oppskrift → åpne modal for å velge
       setSelectedDay({ index: dayIndex, type: 'middag' })
@@ -228,6 +287,20 @@ export default function MatplanleggerPage() {
       const data = await getOrCreateMealPlan(weekStart, userId)
       setPlan(data)
     }
+  }
+
+  // ============================================
+  // FJERN OPPPSKRIFT FRA DAG
+  // ============================================
+  const handleRemoveDay = async (dayIndex: number) => {
+    if (!plan?.id || !userId) return
+
+    const success = await saveMealPlanDay(plan.id, dayIndex, null, 'middag', '')
+    if (success) {
+      const data = await getOrCreateMealPlan(weekStart, userId)
+      setPlan(data)
+    }
+    setShowRemoveModal(null)
   }
 
   // ============================================
@@ -405,7 +478,7 @@ export default function MatplanleggerPage() {
                       {oppskrift.tittel}
                     </div>
                     <div className="text-xs text-gray-400 mt-1">⏱ {oppskrift.prep_time || 30} min</div>
-                    <div className="text-xs text-green-600 mt-1">👆 Klikk for å åpne</div>
+                    <div className="text-xs text-green-600 mt-1">👆 Klikk for valg</div>
                   </div>
                 ) : (
                   <div className="text-center text-gray-400 text-xs flex items-center justify-center h-full">
@@ -433,16 +506,29 @@ export default function MatplanleggerPage() {
         />
       )}
 
+      {/* Modal for å bekrefte fjerning */}
+      {showRemoveModal && (
+        <FjernBekreftModal
+          isOpen={!!showRemoveModal}
+          onClose={() => setShowRemoveModal(null)}
+          onConfirm={() => {
+            if (showRemoveModal) {
+              handleRemoveDay(showRemoveModal.index)
+            }
+          }}
+          oppskriftTittel={showRemoveModal.tittel}
+        />
+      )}
+
       {/* Tips-boks */}
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
         <h3 className="font-semibold text-blue-800 mb-2">💡 Slik bruker du planleggeren:</h3>
         <ul className="text-sm text-blue-700 space-y-1">
-          <li>• <strong>Klikk på en dag</strong> for å velge en oppskrift</li>
-          <li>• <strong>Klikk på en dag med oppskrift</strong> for å gå til oppskriften</li>
+          <li>• <strong>Klikk på en tom dag</strong> for å velge en oppskrift</li>
+          <li>• <strong>Klikk på en dag med oppskrift</strong> → velg å gå til oppskriften eller fjerne den</li>
           <li>• <span className="inline-block w-3 h-3 bg-green-400 rounded-full mr-1"></span> Grønn farge = oppskrift lagt til</li>
           <li>• Trykk <strong>"Generer handleliste"</strong> for å få alle ingredienser</li>
           <li>• Rød ramme markerer <strong>dagens dato</strong></li>
-          <li>• ❤️ Legg til favoritter og 🗓️ Planlegger direkte fra oppskriftssiden</li>
         </ul>
       </div>
 
