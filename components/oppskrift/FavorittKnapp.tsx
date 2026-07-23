@@ -15,7 +15,8 @@ export default function FavorittKnapp({ oppskriftId, variant = 'icon' }: Props) 
     // Sjekk om oppskriften er i favoritter
     const favoritter = JSON.parse(localStorage.getItem('favoritter') || '[]')
     setIsFavorite(favoritter.includes(oppskriftId))
-  }, [oppskriftId])
+    console.log(`❤️ Oppskrift ${oppskriftId} er ${isFavorite ? 'i' : 'ikke i'} favoritter`)
+  }, [oppskriftId, isFavorite])
 
   const toggleFavorite = () => {
     const favoritter = JSON.parse(localStorage.getItem('favoritter') || '[]')
@@ -26,6 +27,7 @@ export default function FavorittKnapp({ oppskriftId, variant = 'icon' }: Props) 
       localStorage.setItem('favoritter', JSON.stringify(nye))
       setIsFavorite(false)
       setShowFeedback(true)
+      console.log(`🗑️ Fjernet ${oppskriftId} fra favoritter`)
       setTimeout(() => setShowFeedback(false), 2000)
     } else {
       // Legg til i favoritter
@@ -33,6 +35,7 @@ export default function FavorittKnapp({ oppskriftId, variant = 'icon' }: Props) 
       localStorage.setItem('favoritter', JSON.stringify(favoritter))
       setIsFavorite(true)
       setShowFeedback(true)
+      console.log(`✅ Lagt til ${oppskriftId} i favoritter`)
       setTimeout(() => setShowFeedback(false), 2000)
     }
   }
