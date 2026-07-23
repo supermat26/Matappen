@@ -139,7 +139,6 @@ export default function MatplanleggerPage() {
       const { data: { user } } = await supabase.auth.getUser()
       
       if (!user) {
-        // Ikke logget inn - send til login
         router.push('/auth?redirect=/matplanlegger')
         return
       }
@@ -204,6 +203,21 @@ export default function MatplanleggerPage() {
   }
 
   // ============================================
+  // HÅNDTER KLIKK PÅ DAG
+  // ============================================
+  const handleDayClick = (dayIndex: number) => {
+    const day = getDayOppskrift(dayIndex)
+    
+    // Hvis dagen har en oppskrift → gå til oppskriften
+    if (day?.oppskrift_id) {
+      router.push(`/oppskrifter/${day.oppskrift_id}`)
+    } else {
+      // Hvis ingen oppskrift → åpne modal for å velge
+      setSelectedDay({ index: dayIndex, type: 'middag' })
+    }
+  }
+
+  // ============================================
   // LAGRE DAG
   // ============================================
   const handleSaveDay = async (dayIndex: number, oppskriftId: string | null) => {
@@ -232,17 +246,14 @@ export default function MatplanleggerPage() {
         return
       }
 
-      // Hent eksisterende handleliste
       const eksisterende = JSON.parse(localStorage.getItem('handleliste') || '[]')
       
-      // Legg til nye ingredienser
       const nye = ingredients.map((ing: any) => ({
         id: `${ing.navn}-${Date.now()}`,
         navn: ing.navn,
         mengde: ing.mengde
       }))
 
-      // Unngå duplikater
       const alle = [...eksisterende]
       nye.forEach((item: any) => {
         if (!alle.some((e: any) => e.navn === item.navn)) {
@@ -364,6 +375,7 @@ export default function MatplanleggerPage() {
           const day = getDayOppskrift(index)
           const oppskrift = day?.oppskrift
           const isToday = erIdag(date)
+          const hasOppskrift = !!oppskrift
 
           return (
             <div
@@ -378,20 +390,26 @@ export default function MatplanleggerPage() {
                 </span>
               </div>
 
+              {/* Dag-knapp */}
               <button
-                onClick={() => setSelectedDay({ index, type: 'middag' })}
-                className="w-full text-left min-h-[60px] p-1 rounded-lg border-2 border-dashed border-gray-200 hover:border-red-400 transition-colors"
+                onClick={() => handleDayClick(index)}
+                className={`w-full text-left min-h-[60px] p-1 rounded-lg border-2 transition-colors ${
+                  hasOppskrift
+                    ? 'border-green-400 bg-green-50 hover:bg-green-100 hover:border-green-600'
+                    : 'border-dashed border-gray-200 hover:border-red-400'
+                }`}
               >
-                {oppskrift ? (
+                {hasOppskrift ? (
                   <div className="text-center">
                     <div className="text-xs leading-tight font-medium text-gray-800 line-clamp-2">
                       {oppskrift.tittel}
                     </div>
                     <div className="text-xs text-gray-400 mt-1">⏱ {oppskrift.prep_time || 30} min</div>
+                    <div className="text-xs text-green-600 mt-1">👆 Klikk for å åpne</div>
                   </div>
                 ) : (
                   <div className="text-center text-gray-400 text-xs flex items-center justify-center h-full">
-                    <span>+</span>
+                    <span>+ Legg til</span>
                   </div>
                 )}
               </button>
@@ -419,10 +437,11 @@ export default function MatplanleggerPage() {
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
         <h3 className="font-semibold text-blue-800 mb-2">💡 Slik bruker du planleggeren:</h3>
         <ul className="text-sm text-blue-700 space-y-1">
-          <li>• Klikk på en dag for å velge en oppskrift</li>
-          <li>• Trykk "Generer handleliste" for å få alle ingredienser</li>
-          <li>• Rød ramme markerer dagens dato</li>
-          <li>• Naviger med pilene for å se andre uker</li>
+          <li>• <strong>Klikk på en dag</strong> for å velge en oppskrift</li>
+          <li>• <strong>Klikk på en dag med oppskrift</strong> for å gå til oppskriften</li>
+          <li>• <span className="inline-block w-3 h-3 bg-green-400 rounded-full mr-1"></span> Grønn farge = oppskrift lagt til</li>
+          <li>• Trykk <strong>"Generer handleliste"</strong> for å få alle ingredienser</li>
+          <li>• Rød ramme markerer <strong>dagens dato</strong></li>
         </ul>
       </div>
 
