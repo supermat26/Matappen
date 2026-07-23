@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import Navbar from '@/components/Navbar'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -37,24 +38,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className={`${inter.className} pb-20`}>
-        {/* 🔝 TOPP-NAVIGASJON */}
-        <nav className="bg-red-600 text-white p-4 shadow-lg sticky top-0 z-50">
-          <div className="max-w-6xl mx-auto flex justify-between items-center">
-            <a href="/" className="text-2xl font-bold flex items-center gap-2">
-              🍳 Matappen
-            </a>
-            <div className="flex items-center gap-3">
-              <a href="/handleliste" className="hover:underline text-sm flex items-center gap-1">
-                🛒 Handleliste
-              </a>
-              <a href="/auth" className="hover:underline text-sm flex items-center gap-1">
-                👤 Logg inn
-              </a>
-            </div>
-          </div>
-        </nav>
-
-        {/* 📄 HOVEDINNHOLD */}
+        <Navbar />
         <main className="max-w-6xl mx-auto p-4 pb-24">
           {children}
         </main>
