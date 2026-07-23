@@ -12,14 +12,13 @@ export default function Navbar() {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data } = await supabase.auth.getUser()
-      setUser(data.user || null)
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user || null)
       setLoading(false)
     }
 
     getUser()
 
-    // Lytt etter endringer i auth-status
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         setUser(session?.user || null)
@@ -54,10 +53,13 @@ export default function Navbar() {
           {loading ? (
             <span className="text-sm">⏳</span>
           ) : user ? (
-            <div className="flex items-center gap-2">
-              <span className="text-sm hidden sm:inline">
-                👋 {user.email?.split('@')[0]}
-              </span>
+            <div className="flex items-center gap-3">
+              <Link 
+                href="/profil" 
+                className="text-sm hover:underline hidden sm:inline-flex items-center gap-1"
+              >
+                👤 {user.email?.split('@')[0]}
+              </Link>
               <button
                 onClick={handleLogout}
                 className="text-sm hover:underline flex items-center gap-1"
