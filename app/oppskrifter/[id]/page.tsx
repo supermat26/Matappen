@@ -5,6 +5,8 @@ import Link from 'next/link'
 import LeggTilHandleliste from '@/components/oppskrift/LeggTilHandleliste'
 import Opplesningsknapp from '@/components/oppskrift/Opplesningsknapp'
 import LesStegKnapp from '@/components/oppskrift/LesStegKnapp'
+import FavorittKnapp from '@/components/oppskrift/FavorittKnapp'
+import LeggTilPlanlegger from '@/components/oppskrift/LeggTilPlanlegger'
 
 interface Props {
   params: {
@@ -41,10 +43,14 @@ export default async function OppskriftPage({ params }: Props) {
         </div>
       )}
 
-      {/* Tittel og info */}
-      <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
-        {oppskrift.tittel}
-      </h1>
+      {/* Tittel og info - med favoritt-knapp */}
+      <div className="flex justify-between items-start mb-2">
+        <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
+          {oppskrift.tittel}
+        </h1>
+        <FavorittKnapp oppskriftId={oppskrift.id} />
+      </div>
+
       <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-6">
         <span>⏱ {oppskrift.prep_time || 30} min</span>
         <span>👥 {oppskrift.porsjoner || 4} porsjoner</span>
@@ -59,6 +65,12 @@ export default async function OppskriftPage({ params }: Props) {
           {oppskrift.beskrivelse}
         </p>
       )}
+
+      {/* HANDLINGSKNAPPER - Favoritter og Planlegger */}
+      <div className="flex flex-wrap gap-3 mb-8">
+        <LeggTilPlanlegger oppskriftId={oppskrift.id} oppskriftTittel={oppskrift.tittel} />
+        <FavorittKnapp oppskriftId={oppskrift.id} variant="button" />
+      </div>
 
       {/* Ingredienser */}
       <div className="bg-gray-50 rounded-xl p-6 mb-8">
