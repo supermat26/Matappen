@@ -8,7 +8,8 @@ const kategoriIkoner: Record<string, string> = {
   frokost: '🥞',
   suppe: '🥣',
   vegetar: '🥗',
-  dessert: '🍰'
+  dessert: '🍰',
+  annet: '🍕'
 }
 
 export default async function Home() {
@@ -47,13 +48,13 @@ export default async function Home() {
       {/* Kategorier */}
       <section className="mb-12">
         <h2 className="text-2xl font-bold mb-4">📂 Velg kategori</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {kategorier.length > 0 ? (
-            kategorier.map((kategori) => (
+        {kategorier.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {kategorier.map((kategori) => (
               <Link
                 key={kategori}
                 href={`/kategorier/${kategori}`}
-                className="bg-white border-2 border-gray-200 rounded-xl p-4 text-center hover:border-red-500 hover:shadow-lg transition-all"
+                className="bg-white border-2 border-gray-200 rounded-xl p-4 text-center hover:border-red-500 hover:shadow-lg transition-all active:scale-95"
               >
                 <div className="text-4xl mb-2">
                   {kategoriIkoner[kategori] || '🍽️'}
@@ -62,11 +63,11 @@ export default async function Home() {
                   {kategori}
                 </div>
               </Link>
-            ))
-          ) : (
-            <p className="col-span-full text-gray-500">Ingen kategorier funnet</p>
-          )}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500">Ingen kategorier funnet</p>
+        )}
       </section>
 
       {/* Siste oppskrifter */}
@@ -79,7 +80,7 @@ export default async function Home() {
                 <Link
                   key={oppskrift.id}
                   href={`/oppskrifter/${oppskrift.id}`}
-                  className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow"
+                  className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow active:scale-[0.98]"
                 >
                   {oppskrift.bilde_url && (
                     <div className="h-48 bg-gray-200 relative">
@@ -92,7 +93,7 @@ export default async function Home() {
                     </div>
                   )}
                   <div className="p-4">
-                    <h3 className="text-xl font-semibold text-gray-800">
+                    <h3 className="text-xl font-semibold text-gray-800 line-clamp-1">
                       {oppskrift.tittel}
                     </h3>
                     <p className="text-gray-600 text-sm mt-1 line-clamp-2">
@@ -113,7 +114,7 @@ export default async function Home() {
               <div className="text-center mt-8">
                 <Link
                   href="/alle-oppskrifter"
-                  className="inline-block bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700"
+                  className="inline-block bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors active:bg-red-800"
                 >
                   Se alle {oppskrifter.length} oppskrifter →
                 </Link>
