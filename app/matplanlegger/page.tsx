@@ -14,18 +14,21 @@ import {
 import type { MealPlanDay } from '@/lib/mealPlanner'
 import type { Oppskrift } from '@/lib/oppskrifter'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 
-// Modal for å velge oppskrift
+// ============================================
+// MODAL: Velg oppskrift
+// ============================================
 function VelgOppskriftModal({ 
   isOpen, 
   onClose, 
   onSelect, 
   currentOppskriftId 
 }: { 
-  isOpen: boolean; 
-  onClose: () => void; 
-  onSelect: (id: string | null) => void; 
-  currentOppskriftId: string | null;
+  isOpen: boolean
+  onClose: () => void
+  onSelect: (id: string | null) => void
+  currentOppskriftId: string | null
 }) {
   const [oppskrifter, setOppskrifter] = useState<Oppskrift[]>([])
   const [sok, setSok] = useState('')
@@ -115,6 +118,9 @@ function VelgOppskriftModal({
   )
 }
 
+// ============================================
+// HOVEDKOMPONENT
+// ============================================
 export default function MatplanleggerPage() {
   const [selectedDay, setSelectedDay] = useState<{ index: number; type: string } | null>(null)
   const [plan, setPlan] = useState<any>(null)
@@ -123,17 +129,30 @@ export default function MatplanleggerPage() {
   const [weekStart, setWeekStart] = useState<string>(getWeekStart())
   const [generatingList, setGeneratingList] = useState(false)
   const [error, setError] = useState<string>('')
+  const router = useRouter()
 
+  // ============================================
+  // SJEKK AUTH
+  // ============================================
   useEffect(() => {
-    const getUser = async () => {
-      const { data } = await supabase.auth.getUser()
-      if (data.user) {
-        setUserId(data.user.id)
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        // Ikke logget inn - send til login
+        router.push('/auth?redirect=/matplanlegger')
+        return
       }
+      
+      setUserId(user.id)
     }
-    getUser()
-  }, [])
 
+    checkAuth()
+  }, [router])
+
+  // ============================================
+  // LAST PLAN
+  // ============================================
   useEffect(() => {
     if (!userId) {
       setLoading(false)
@@ -159,6 +178,9 @@ export default function MatplanleggerPage() {
     loadPlan()
   }, [userId, weekStart])
 
+  // ============================================
+  // HENT UKEDAGER
+  // ============================================
   const weekDays = getWeekDays(weekStart)
 
   const forrigeUke = () => {
@@ -181,29 +203,46 @@ export default function MatplanleggerPage() {
     return plan?.days?.find((d: any) => d.day_of_week === dayIndex)
   }
 
+  // ============================================
+  // LAGRE DAG
+  // ============================================
   const handleSaveDay = async (dayIndex: number, oppskriftId: string | null) => {
-    if (!plan?.id) return
+    if (!plan?.id || !userId) return
 
     const success = await saveMealPlanDay(plan.id, dayIndex, oppskriftId, 'middag', '')
     if (success) {
-      const data = await getOrCreateMealPlan(weekStart, userId!)
+      const data = await getOrCreateMealPlan(weekStart, userId)
       setPlan(data)
     }
   }
 
+  // ============================================
+  // GENERER HANDLELISTE
+  // ============================================
   const genererHandleliste = async () => {
     if (!plan?.id) return
 
     setGeneratingList(true)
     try {
       const ingredients = await getIngredientsFromMealPlan(plan.id)
+      
+      if (ingredients.length === 0) {
+        alert('Ingen ingredienser å legge til. Legg til oppskrifter i planen først!')
+        setGeneratingList(false)
+        return
+      }
+
+      // Hent eksisterende handleliste
       const eksisterende = JSON.parse(localStorage.getItem('handleliste') || '[]')
+      
+      // Legg til nye ingredienser
       const nye = ingredients.map((ing: any) => ({
         id: `${ing.navn}-${Date.now()}`,
         navn: ing.navn,
         mengde: ing.mengde
       }))
 
+      // Unngå duplikater
       const alle = [...eksisterende]
       nye.forEach((item: any) => {
         if (!alle.some((e: any) => e.navn === item.navn)) {
@@ -219,6 +258,9 @@ export default function MatplanleggerPage() {
     setGeneratingList(false)
   }
 
+  // ============================================
+  // SJEKK OM DAG ER I DAG
+  // ============================================
   const erIdag = (date: Date) => {
     const iDag = new Date()
     return date.getDate() === iDag.getDate() &&
@@ -226,6 +268,9 @@ export default function MatplanleggerPage() {
       date.getFullYear() === iDag.getFullYear()
   }
 
+  // ============================================
+  // RENDER: LOADING
+  // ============================================
   if (loading) {
     return (
       <div className="text-center py-12">
@@ -234,6 +279,9 @@ export default function MatplanleggerPage() {
     )
   }
 
+  // ============================================
+  // RENDER: FEIL
+  // ============================================
   if (error) {
     return (
       <div className="text-center py-12 bg-red-50 rounded-xl p-8">
@@ -253,6 +301,9 @@ export default function MatplanleggerPage() {
     )
   }
 
+  // ============================================
+  // RENDER: IKKE LOGGET INN
+  // ============================================
   if (!userId) {
     return (
       <div className="text-center py-12">
@@ -260,7 +311,7 @@ export default function MatplanleggerPage() {
         <h1 className="text-2xl font-bold mb-4">Logg inn for å planlegge måltider</h1>
         <p className="text-gray-600 mb-6">Du må være innlogget for å bruke måltidsplanleggeren</p>
         <Link
-          href="/auth"
+          href="/auth?redirect=/matplanlegger"
           className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700"
         >
           Logg inn
@@ -269,8 +320,12 @@ export default function MatplanleggerPage() {
     )
   }
 
+  // ============================================
+  // RENDER: HOVEDINNHOLD
+  // ============================================
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold">🗓️ Måltidsplanlegger</h1>
         <button
@@ -282,6 +337,7 @@ export default function MatplanleggerPage() {
         </button>
       </div>
 
+      {/* Uke-navigasjon */}
       <div className="flex items-center justify-between bg-white rounded-xl p-3 shadow-sm mb-6">
         <button onClick={forrigeUke} className="text-2xl p-2 hover:bg-gray-100 rounded">‹</button>
         <div className="flex items-center gap-4">
@@ -293,12 +349,16 @@ export default function MatplanleggerPage() {
         <button onClick={nesteUke} className="text-2xl p-2 hover:bg-gray-100 rounded">›</button>
       </div>
 
+      {/* Dagnavn */}
       <div className="grid grid-cols-7 gap-2">
         {DAY_NAMES_SHORT.map((navn, i) => (
-          <div key={i} className="text-center text-xs font-semibold text-gray-500 py-2">{navn}</div>
+          <div key={i} className="text-center text-xs font-semibold text-gray-500 py-2">
+            {navn}
+          </div>
         ))}
       </div>
 
+      {/* Uke-grid */}
       <div className="grid grid-cols-7 gap-2">
         {weekDays.map((date, index) => {
           const day = getDayOppskrift(index)
@@ -340,6 +400,7 @@ export default function MatplanleggerPage() {
         })}
       </div>
 
+      {/* Modal for å velge oppskrift */}
       {selectedDay && (
         <VelgOppskriftModal
           isOpen={!!selectedDay}
@@ -354,6 +415,7 @@ export default function MatplanleggerPage() {
         />
       )}
 
+      {/* Tips-boks */}
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
         <h3 className="font-semibold text-blue-800 mb-2">💡 Slik bruker du planleggeren:</h3>
         <ul className="text-sm text-blue-700 space-y-1">
@@ -364,8 +426,11 @@ export default function MatplanleggerPage() {
         </ul>
       </div>
 
-      <div className="mt-4 flex justify-between text-xs text-gray-400">
-        <span>Planlagte måltider: {plan?.days?.filter((d: any) => d.oppskrift_id).length || 0} av 7</span>
+      {/* Status og ukeplan */}
+      <div className="mt-4 flex flex-wrap justify-between items-center text-xs text-gray-400 gap-2">
+        <span>
+          Planlagte måltider: {plan?.days?.filter((d: any) => d.oppskrift_id).length || 0} av 7
+        </span>
         <button
           onClick={() => {
             const dager = weekDays.map((date, i) => {
@@ -383,7 +448,9 @@ export default function MatplanleggerPage() {
   )
 }
 
-// Hjelpefunksjon for ukenummer
+// ============================================
+// HELPEFUNKSJON: UKENUMMER
+// ============================================
 declare global {
   interface Date {
     getWeekNumber(): number
