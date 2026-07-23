@@ -1,21 +1,41 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function AuthPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    // Sjekk om det er en feil fra callback
+    const errorParam = searchParams.get('error')
+    if (errorParam === 'confirm_failed') {
+      setError('Bekreftelse feilet. Prøv igjen eller kontakt support.')
+    }
+
+    // Sjekk om brukeren allerede er logget inn
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getUser()
+      if (data.user) {
+        router.push('/')
+      }
+    }
+    checkUser()
+  }, [router, searchParams])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setSuccess('')
 
     try {
       if (mode === 'login') {
@@ -29,13 +49,44 @@ export default function AuthPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
+          },
         })
         if (error) throw error
-        alert('Registrering vellykket! Sjekk e-posten din for bekreftelse.')
+        setSuccess('📧 Registrering vellykket! Sjekk e-posten din for bekreftelse.')
         setMode('login')
       }
     } catch (err: any) {
       setError(err.message || 'Noe gikk galt')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Resend confirmation email
+  const resendConfirmation = async () => {
+    if (!email) {
+      setError('Skriv inn e-postadressen din først.')
+      return
+    }
+
+    setLoading(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        },
+      })
+      if (error) throw error
+      setSuccess('📧 Ny bekreftelses-e-post sendt! Sjekk innboksen din.')
+    } catch (err: any) {
+      setError(err.message || 'Kunne ikke sende på nytt.')
     } finally {
       setLoading(false)
     }
@@ -80,6 +131,12 @@ export default function AuthPage() {
             </div>
           )}
 
+          {success && (
+            <div className="bg-green-50 text-green-600 p-3 rounded-lg text-sm">
+              {success}
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
@@ -88,6 +145,19 @@ export default function AuthPage() {
             {loading ? '⏳ Laster...' : mode === 'login' ? 'Logg inn' : 'Registrer'}
           </button>
         </form>
+
+        {/* Resend confirmation */}
+        {mode === 'register' && (
+          <div className="mt-4 text-center">
+            <button
+              onClick={resendConfirmation}
+              disabled={loading}
+              className="text-sm text-blue-600 hover:underline disabled:opacity-50"
+            >
+              Send bekreftelses-e-post på nytt
+            </button>
+          </div>
+        )}
 
         <div className="mt-6 text-center text-sm text-gray-600">
           {mode === 'login' ? (
@@ -113,7 +183,6 @@ export default function AuthPage() {
           )}
         </div>
 
-        {/* Gjestemodus (valgfritt) */}
         <div className="mt-4 border-t pt-4 text-center">
           <button
             onClick={() => router.push('/')}
@@ -121,6 +190,10 @@ export default function AuthPage() {
           >
             Fortsett som gjest (begrenset funksjonalitet)
           </button>
+        </div>
+
+        <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-700">
+          💡 <strong>Tips:</strong> Sjekk søppelpost-mappen hvis du ikke finner bekreftelses-e-posten.
         </div>
       </div>
     </div>
