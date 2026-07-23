@@ -1,12 +1,22 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { createServerClient } from '@/lib/supabaseClient'
+import { createClient } from '@supabase/supabase-js'
 
+// For middleware bruker vi en enkel metode
 export async function middleware(req: NextRequest) {
-  // Opprett en server-side Supabase-klient
-  const supabase = createServerClient(req.cookies)
+  // Opprett en Supabase-klient uten cookies (bruker standard auth)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  
+  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
+  })
 
-  // Sjekk om brukeren er logget inn
+  // Hent session fra request (via Authorization header eller cookies)
   const { data: { session } } = await supabase.auth.getSession()
 
   const path = req.nextUrl.pathname
@@ -35,6 +45,5 @@ export const config = {
     '/matplanlegger/:path*',
     '/favoritter/:path*',
     '/auth',
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 }
