@@ -30,7 +30,6 @@ export default function LesStegKnapp({ tekst, stegNummer }: Props) {
       return
     }
 
-    // Sørg for at stemmer er lastet
     const voices = synthRef.current.getVoices()
     if (voices.length === 0) {
       setFeil('Laster stemmer... prøv igjen')
@@ -46,7 +45,6 @@ export default function LesStegKnapp({ tekst, stegNummer }: Props) {
     utterance.rate = 0.85
     utterance.pitch = 1
 
-    // Finn norsk stemme
     const norskStemme = voices.find(v => v.lang.startsWith('nb') || v.lang.startsWith('no'))
     if (norskStemme) {
       utterance.voice = norskStemme
