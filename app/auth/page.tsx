@@ -1,10 +1,20 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter, useSearchParams } from 'next/navigation'
 
+// Hovedkomponenten med Suspense
 export default function AuthPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-12">⏳ Laster...</div>}>
+      <AuthContent />
+    </Suspense>
+  )
+}
+
+// Innholdet som bruker useSearchParams
+function AuthContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -16,7 +26,7 @@ export default function AuthPage() {
 
   useEffect(() => {
     // Sjekk om det er en feil fra callback
-    const errorParam = searchParams.get('error')
+    const errorParam = searchParams?.get('error')
     if (errorParam === 'confirm_failed') {
       setError('Bekreftelse feilet. Prøv igjen eller kontakt support.')
     }
