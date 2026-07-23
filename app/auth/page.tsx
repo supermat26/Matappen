@@ -3,8 +3,8 @@
 import { useState, useEffect, Suspense } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 
-// Hovedkomponenten med Suspense
 export default function AuthPage() {
   return (
     <Suspense fallback={<div className="text-center py-12">⏳ Laster...</div>}>
@@ -13,7 +13,6 @@ export default function AuthPage() {
   )
 }
 
-// Innholdet som bruker useSearchParams
 function AuthContent() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -25,17 +24,13 @@ function AuthContent() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    // Sjekk om det er en feil fra callback
-    const errorParam = searchParams?.get('error')
-    if (errorParam === 'confirm_failed') {
-      setError('Bekreftelse feilet. Prøv igjen eller kontakt support.')
-    }
-
     // Sjekk om brukeren allerede er logget inn
     const checkUser = async () => {
       const { data } = await supabase.auth.getUser()
       if (data.user) {
-        router.push('/')
+        // Hvis brukeren er logget inn, send til forsiden
+        const redirect = searchParams?.get('redirect') || '/'
+        router.push(redirect)
       }
     }
     checkUser()
@@ -54,7 +49,8 @@ function AuthContent() {
           password,
         })
         if (error) throw error
-        router.push('/')
+        const redirect = searchParams?.get('redirect') || '/'
+        router.push(redirect)
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -74,7 +70,6 @@ function AuthContent() {
     }
   }
 
-  // Resend confirmation email
   const resendConfirmation = async () => {
     if (!email) {
       setError('Skriv inn e-postadressen din først.')
@@ -194,12 +189,12 @@ function AuthContent() {
         </div>
 
         <div className="mt-4 border-t pt-4 text-center">
-          <button
-            onClick={() => router.push('/')}
+          <Link
+            href="/"
             className="text-gray-500 hover:text-gray-700 text-sm"
           >
-            Fortsett som gjest (begrenset funksjonalitet)
-          </button>
+            ← Fortsett som gjest
+          </Link>
         </div>
 
         <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-700">
