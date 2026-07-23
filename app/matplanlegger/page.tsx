@@ -15,7 +15,7 @@ import type { MealPlanDay } from '@/lib/mealPlanner'
 import type { Oppskrift } from '@/lib/oppskrifter'
 import Link from 'next/link'
 
-// Komponent for å velge oppskrift
+// Modal for å velge oppskrift
 function VelgOppskriftModal({ 
   isOpen, 
   onClose, 
@@ -122,8 +122,8 @@ export default function MatplanleggerPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [weekStart, setWeekStart] = useState<string>(getWeekStart())
   const [generatingList, setGeneratingList] = useState(false)
+  const [error, setError] = useState<string>('')
 
-  // Sjekk bruker
   useEffect(() => {
     const getUser = async () => {
       const { data } = await supabase.auth.getUser()
@@ -134,24 +134,33 @@ export default function MatplanleggerPage() {
     getUser()
   }, [])
 
-  // Last plan
   useEffect(() => {
-    if (!userId) return
+    if (!userId) {
+      setLoading(false)
+      return
+    }
 
     const loadPlan = async () => {
       setLoading(true)
-      const data = await getOrCreateMealPlan(weekStart, userId)
-      setPlan(data)
+      setError('')
+      try {
+        const data = await getOrCreateMealPlan(weekStart, userId)
+        if (data) {
+          setPlan(data)
+        } else {
+          setError('Kunne ikke hente måltidsplan. Sørg for at databasen er satt opp.')
+        }
+      } catch (err) {
+        setError('Feil ved lasting av måltidsplan: ' + (err as Error).message)
+      }
       setLoading(false)
     }
 
     loadPlan()
   }, [userId, weekStart])
 
-  // Hent uke-dager
   const weekDays = getWeekDays(weekStart)
 
-  // Naviger uker
   const forrigeUke = () => {
     const d = new Date(weekStart)
     d.setDate(d.getDate() - 7)
@@ -168,60 +177,48 @@ export default function MatplanleggerPage() {
     setWeekStart(getWeekStart())
   }
 
-  // Hent oppskrift for en dag
   const getDayOppskrift = (dayIndex: number): MealPlanDay | undefined => {
     return plan?.days?.find((d: any) => d.day_of_week === dayIndex)
   }
 
-  // Lagre dag
   const handleSaveDay = async (dayIndex: number, oppskriftId: string | null) => {
     if (!plan?.id) return
 
-    const success = await saveMealPlanDay(
-      plan.id,
-      dayIndex,
-      oppskriftId,
-      'middag',
-      ''
-    )
-
+    const success = await saveMealPlanDay(plan.id, dayIndex, oppskriftId, 'middag', '')
     if (success) {
-      // Last planen på nytt
       const data = await getOrCreateMealPlan(weekStart, userId!)
       setPlan(data)
     }
   }
 
-  // Generer handleliste
   const genererHandleliste = async () => {
     if (!plan?.id) return
 
     setGeneratingList(true)
-    const ingredients = await getIngredientsFromMealPlan(plan.id)
+    try {
+      const ingredients = await getIngredientsFromMealPlan(plan.id)
+      const eksisterende = JSON.parse(localStorage.getItem('handleliste') || '[]')
+      const nye = ingredients.map((ing: any) => ({
+        id: `${ing.navn}-${Date.now()}`,
+        navn: ing.navn,
+        mengde: ing.mengde
+      }))
 
-    // Legg til i handleliste (localStorage)
-    const eksisterende = JSON.parse(localStorage.getItem('handleliste') || '[]')
-    const nye = ingredients.map((ing: any) => ({
-      id: `${ing.navn}-${Date.now()}`,
-      navn: ing.navn,
-      mengde: ing.mengde
-    }))
+      const alle = [...eksisterende]
+      nye.forEach((item: any) => {
+        if (!alle.some((e: any) => e.navn === item.navn)) {
+          alle.push(item)
+        }
+      })
 
-    // Unngå duplikater
-    const alle = [...eksisterende]
-    nye.forEach((item: any) => {
-      if (!alle.some((e: any) => e.navn === item.navn)) {
-        alle.push(item)
-      }
-    })
-
-    localStorage.setItem('handleliste', JSON.stringify(alle))
+      localStorage.setItem('handleliste', JSON.stringify(alle))
+      alert(`✅ ${nye.length} ingredienser lagt til i handlelisten!`)
+    } catch (err) {
+      alert('Kunne ikke generere handleliste: ' + (err as Error).message)
+    }
     setGeneratingList(false)
-
-    alert(`✅ ${nye.length} ingredienser lagt til i handlelisten!`)
   }
 
-  // Sjekk om en dag er i dag
   const erIdag = (date: Date) => {
     const iDag = new Date()
     return date.getDate() === iDag.getDate() &&
@@ -233,6 +230,25 @@ export default function MatplanleggerPage() {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">Laster måltidsplan...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-12 bg-red-50 rounded-xl p-8">
+        <div className="text-6xl mb-4">⚠️</div>
+        <h2 className="text-xl font-bold text-red-700 mb-2">Noe gikk galt</h2>
+        <p className="text-red-600 mb-4">{error}</p>
+        <p className="text-sm text-gray-600">
+          Husk å kjøre SQL for meal_plans og meal_plan_days i Supabase.
+        </p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700"
+        >
+          Prøv igjen
+        </button>
       </div>
     )
   }
@@ -257,37 +273,29 @@ export default function MatplanleggerPage() {
     <div className="max-w-4xl mx-auto">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold">🗓️ Måltidsplanlegger</h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={genererHandleliste}
-            disabled={generatingList}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm disabled:opacity-50"
-          >
-            {generatingList ? '⏳ Genererer...' : '🛒 Generer handleliste'}
-          </button>
-        </div>
+        <button
+          onClick={genererHandleliste}
+          disabled={generatingList}
+          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 text-sm disabled:opacity-50"
+        >
+          {generatingList ? '⏳ Genererer...' : '🛒 Generer handleliste'}
+        </button>
       </div>
 
-      {/* Uke-navigasjon */}
       <div className="flex items-center justify-between bg-white rounded-xl p-3 shadow-sm mb-6">
         <button onClick={forrigeUke} className="text-2xl p-2 hover:bg-gray-100 rounded">‹</button>
         <div className="flex items-center gap-4">
           <span className="font-semibold">
             Uke {new Date(weekStart).getWeekNumber()}
           </span>
-          <button onClick={idag} className="text-sm text-blue-600 hover:underline">
-            I dag
-          </button>
+          <button onClick={idag} className="text-sm text-blue-600 hover:underline">I dag</button>
         </div>
         <button onClick={nesteUke} className="text-2xl p-2 hover:bg-gray-100 rounded">›</button>
       </div>
 
-      {/* Uke-grid */}
       <div className="grid grid-cols-7 gap-2">
         {DAY_NAMES_SHORT.map((navn, i) => (
-          <div key={i} className="text-center text-xs font-semibold text-gray-500 py-2">
-            {navn}
-          </div>
+          <div key={i} className="text-center text-xs font-semibold text-gray-500 py-2">{navn}</div>
         ))}
       </div>
 
@@ -316,16 +324,14 @@ export default function MatplanleggerPage() {
               >
                 {oppskrift ? (
                   <div className="text-center">
-                    <div className="text-lg leading-tight font-medium text-gray-800 line-clamp-2">
+                    <div className="text-xs leading-tight font-medium text-gray-800 line-clamp-2">
                       {oppskrift.tittel}
                     </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      ⏱ {oppskrift.prep_time || 30} min
-                    </div>
+                    <div className="text-xs text-gray-400 mt-1">⏱ {oppskrift.prep_time || 30} min</div>
                   </div>
                 ) : (
                   <div className="text-center text-gray-400 text-xs flex items-center justify-center h-full">
-                    <span>+ Legg til</span>
+                    <span>+</span>
                   </div>
                 )}
               </button>
@@ -334,7 +340,6 @@ export default function MatplanleggerPage() {
         })}
       </div>
 
-      {/* Modal for å velge oppskrift */}
       {selectedDay && (
         <VelgOppskriftModal
           isOpen={!!selectedDay}
@@ -349,9 +354,8 @@ export default function MatplanleggerPage() {
         />
       )}
 
-      {/* Forklaring */}
       <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
-        <h3 className="font-semibold text-blue-800 mb-2">💡 Slik bruker du måltidsplanleggeren:</h3>
+        <h3 className="font-semibold text-blue-800 mb-2">💡 Slik bruker du planleggeren:</h3>
         <ul className="text-sm text-blue-700 space-y-1">
           <li>• Klikk på en dag for å velge en oppskrift</li>
           <li>• Trykk "Generer handleliste" for å få alle ingredienser</li>
