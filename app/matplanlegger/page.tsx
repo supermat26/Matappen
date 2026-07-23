@@ -442,6 +442,7 @@ export default function MatplanleggerPage() {
           <li>• <span className="inline-block w-3 h-3 bg-green-400 rounded-full mr-1"></span> Grønn farge = oppskrift lagt til</li>
           <li>• Trykk <strong>"Generer handleliste"</strong> for å få alle ingredienser</li>
           <li>• Rød ramme markerer <strong>dagens dato</strong></li>
+          <li>• ❤️ Legg til favoritter og 🗓️ Planlegger direkte fra oppskriftssiden</li>
         </ul>
       </div>
 
